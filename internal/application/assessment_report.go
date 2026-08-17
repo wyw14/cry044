@@ -18,12 +18,14 @@ type AssessmentReport struct {
 }
 
 type AssessmentLine struct {
-	MaterialID string
-	Title      string
-	Score      float64
-	Passed     bool
-	Vetoed     bool
-	Health     []string
+	MaterialID    string
+	Title         string
+	Score         float64
+	Passed        bool
+	Vetoed        bool
+	ReviewerCount int
+	Disagreements []string
+	Health        []string
 }
 
 func BuildAssessmentReport(batch domain.Batch, reviews []domain.Review, generatedAt time.Time) AssessmentReport {
@@ -37,7 +39,7 @@ func BuildAssessmentReport(batch domain.Batch, reviews []domain.Review, generate
 		if err != nil {
 			continue
 		}
-		line := AssessmentLine{MaterialID: material.ID, Title: material.Title, Score: result.WeightedScore, Passed: result.Passed, Vetoed: result.Vetoed}
+		line := AssessmentLine{MaterialID: material.ID, Title: material.Title, Score: result.WeightedScore, Passed: result.Passed, Vetoed: result.Vetoed, ReviewerCount: result.ReviewerCount, Disagreements: append([]string(nil), result.Disagreements...)}
 		for _, ledger := range domain.BuildCriterionLedger(*batch.Snapshot, reviews, material.ID) {
 			line.Health = append(line.Health, ledger.CriterionID+":"+ledger.Health())
 		}
