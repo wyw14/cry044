@@ -132,8 +132,23 @@ func criterionIndex(items []Criterion) map[string]Criterion {
 	return index
 }
 
+func scaleEqual(left, right Scale) bool {
+	return left.Min == right.Min &&
+		left.Max == right.Max &&
+		left.Pass == right.Pass &&
+		maps.Equal(left.Labels, right.Labels)
+}
+
 func criterionChanged(left, right Criterion) bool {
-	return left.Title != right.Title || left.Weight != right.Weight
+	return left.Title != right.Title ||
+		left.Description != right.Description ||
+		left.Weight != right.Weight ||
+		left.Required != right.Required ||
+		left.Optional != right.Optional ||
+		left.Veto != right.Veto ||
+		!scaleEqual(left.Scale, right.Scale) ||
+		!maps.Equal(left.Conditions, right.Conditions) ||
+		!slices.Equal(left.Variables, right.Variables)
 }
 
 func CompareTemplates(before, after StandardTemplate) CriterionDiff {
