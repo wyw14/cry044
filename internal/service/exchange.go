@@ -44,9 +44,20 @@ func (e *LocalExchange) WriteTemplate(ctx context.Context, template domain.Stand
 
 func (e *LocalExchange) WriteReviewSheet(ctx context.Context, batch domain.Batch, results []domain.MaterialResult) (string, error) {
 	var sheet strings.Builder
-	fmt.Fprintf(&sheet, "评议批次：%s\n模板：%s V%d\n状态：%s\n\n", batch.Name, batch.Snapshot.TemplateID, batch.Snapshot.Version, batch.Status)
+	fmt.Fprintf(&sheet, "评议批次：%s\n", batch.Name)
+	fmt.Fprintf(&sheet, "模板：%s V%d\n", batch.Snapshot.TemplateID, batch.Snapshot.Version)
+	fmt.Fprintf(&sheet, "状态：%s\n\n", batch.Status)
 	for _, result := range results {
-		fmt.Fprintf(&sheet, "材料 %s｜得分 %.2f｜通过 %t｜否决 %t｜评审 %d\n", result.MaterialID, result.WeightedScore, result.Passed, result.Vetoed, result.ReviewerCount)
+		fmt.Fprintf(&sheet, "材料：%s\n", result.MaterialID)
+		fmt.Fprintf(&sheet, "聚合得分：%.2f\n", result.WeightedScore)
+		fmt.Fprintf(&sheet, "通过：%t\n", result.Passed)
+		fmt.Fprintf(&sheet, "否决：%t\n", result.Vetoed)
+		fmt.Fprintf(&sheet, "评审人数：%d\n", result.ReviewerCount)
+		if len(result.Disagreements) == 0 {
+			sheet.WriteString("分歧条目：无\n\n")
+		} else {
+			fmt.Fprintf(&sheet, "分歧条目：%s\n\n", strings.Join(result.Disagreements, ", "))
+		}
 	}
 	stored, err := e.files.Save(ctx, fmt.Sprintf("review-sheet-%s.txt", batch.ID), []byte(sheet.String()))
 	return stored.Path, err
