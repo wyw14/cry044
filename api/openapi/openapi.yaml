@@ -1,0 +1,75 @@
+openapi: 3.0.3
+info:
+  title: 审核标准模板复用与评议 API
+  version: 1.1.0
+servers:
+  - url: /api/v1
+paths:
+  /standards/{id}/versions/{version}/clones:
+    post:
+      summary: 克隆既有标准为独立草稿
+      parameters: [{$ref: '#/components/parameters/ID'}, {$ref: '#/components/parameters/Version'}]
+      responses: {'201': {description: 新模板草稿}, '409': {$ref: '#/components/responses/Conflict'}}
+  /standards/{id}/versions/{version}/publications:
+    post:
+      summary: 经审批发布模板版本
+      parameters: [{$ref: '#/components/parameters/ID'}, {$ref: '#/components/parameters/Version'}]
+      responses: {'200': {description: 已发布}, '409': {$ref: '#/components/responses/Conflict'}}
+  /review-batches/{id}/starts:
+    post:
+      summary: 启动批次并封存模板快照
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses: {'200': {description: 已启动}}
+  /review-batches/{id}/reviews:
+    post:
+      summary: 被分配评审提交意见、分数和证据
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses: {'201': {description: 已提交}}
+  /review-batches/{id}/deliberation:
+    get:
+      summary: 聚合评审席位、分歧和否决项
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses: {'200': {description: 分歧议事单}}
+  /review-batches/{id}/materials/{material_id}/final-decisions:
+    post:
+      summary: 记录带议事依据的最终结论
+      parameters: [{$ref: '#/components/parameters/ID'}, {in: path, name: material_id, required: true, schema: {type: string}}]
+      responses: {'200': {description: 最终结论}, '409': {$ref: '#/components/responses/Conflict'}}
+  /review-batches/{id}/completions:
+    post:
+      summary: 完成批次并固化材料结果
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses: {'200': {description: 批次结果}}
+  /review-batches/{id}/printable-sheet:
+    get:
+      summary: 生成受控本地可打印评议单
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses: {'200': {description: 本地文件路径}}
+  /template-imports:
+    post:
+      summary: 校验并导入离线 JSON 模板
+      responses: {'201': {description: 导入草稿}}
+  /review-statistics:
+    get:
+      summary: 审核周期、退回原因和条目有效性
+      parameters:
+        - {in: query, name: from, schema: {type: string, format: date}}
+        - {in: query, name: to, schema: {type: string, format: date}}
+      responses: {'200': {description: 评议统计}}
+components:
+  parameters:
+    ID: {in: path, name: id, required: true, schema: {type: string}}
+    Version: {in: path, name: version, required: true, schema: {type: integer, minimum: 1}}
+  responses:
+    Conflict:
+      description: 业务状态冲突
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [code, message, field_errors, request_id]
+            properties:
+              code: {type: string}
+              message: {type: string}
+              field_errors: {type: object, additionalProperties: {type: string}}
+              request_id: {type: string}
