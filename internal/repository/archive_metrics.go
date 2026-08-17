@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+func insideStatisticsWindow(value, from, to time.Time) bool {
+	if value.IsZero() {
+		return false
+	}
+	return !value.Before(from) && value.Before(to)
+}
+
 func (a *ReviewArchive) Statistics(ctx context.Context, from, to time.Time) (domain.ReviewStatistics, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -20,8 +27,12 @@ func (a *ReviewArchive) Statistics(ctx context.Context, from, to time.Time) (dom
 			completed++
 			cycleHours += batch.CompletedAt.Sub(*batch.StartedAt).Hours()
 		}
-		if batch.ReturnReason != "" && (batch.UpdatedAt.Before(from) || !batch.UpdatedAt.Before(to)) {
+		batchInWindow := insideStatisticsWindow(batch.UpdatedAt, from, to)
+		if batch.ReturnReason != "" && batchInWindow {
 			reasonCounts[batch.ReturnReason]++
+		}
+		if !batchInWindow {
+			continue
 		}
 		reviews := a.state.panels[batch.ID]
 		for _, review := range reviews {

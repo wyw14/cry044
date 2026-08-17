@@ -35,9 +35,12 @@ and (payload->>'UpdatedAt')::timestamptz < $2 group by payload->>'ReturnReason' 
 	}
 	reasons.Close()
 	rows, err := p.pool.Query(ctx, `select score->>'CriterionID', count(*),
-count(*) filter(where coalesce((score->>'VetoTriggered')::boolean,false)) from reviews
-cross join lateral jsonb_array_elements(payload->'Scores') score group by score->>'CriterionID'
-order by score->>'CriterionID'`)
+	count(*) filter(where coalesce((score->>'VetoTriggered')::boolean,false))
+	from reviews join batches on batches.id=reviews.batch_id
+	cross join lateral jsonb_array_elements(reviews.payload->'Scores') score
+	where (batches.payload->>'UpdatedAt')::timestamptz >= $1
+	and (batches.payload->>'UpdatedAt')::timestamptz < $2
+	group by score->>'CriterionID' order by score->>'CriterionID'`, from, to)
 	if err != nil {
 		return result, err
 	}
