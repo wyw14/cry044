@@ -2,8 +2,11 @@ package application
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"github.com/wyw14/cry044/internal/domain"
+	"strings"
 	"time"
 )
 
@@ -27,7 +30,12 @@ func (s *TransferService) ImportTemplate(ctx context.Context, payload []byte, id
 	when := s.clock.Now()
 	template.Status, template.Revision = domain.TemplateDraft, 1
 	template.CreatedAt, template.UpdatedAt = when, when
-	return s.repository.SaveTemplate(ctx, template, 0, "import")
+	requestKey := strings.TrimSpace(idempotencyKey)
+	if requestKey == "" {
+		digest := sha256.Sum256(payload)
+		requestKey = hex.EncodeToString(digest[:])
+	}
+	return s.repository.SaveTemplate(ctx, template, 0, "import:"+requestKey)
 }
 
 func (s *TransferService) ExportTemplate(ctx context.Context, templateID string, version int) (string, error) {
