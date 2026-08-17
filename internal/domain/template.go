@@ -133,7 +133,7 @@ func criterionIndex(items []Criterion) map[string]Criterion {
 }
 
 func criterionChanged(left, right Criterion) bool {
-	return left.Title != right.Title || left.Weight != right.Weight || left.Veto != right.Veto || left.Required != right.Required
+	return left.Title != right.Title || left.Weight != right.Weight
 }
 
 func CompareTemplates(before, after StandardTemplate) CriterionDiff {
