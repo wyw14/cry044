@@ -20,7 +20,7 @@ func (a *ReviewArchive) Statistics(ctx context.Context, from, to time.Time) (dom
 			completed++
 			cycleHours += batch.CompletedAt.Sub(*batch.StartedAt).Hours()
 		}
-		if batch.ReturnReason != "" {
+		if batch.ReturnReason != "" && (batch.UpdatedAt.Before(from) || !batch.UpdatedAt.Before(to)) {
 			reasonCounts[batch.ReturnReason]++
 		}
 		reviews := a.state.panels[batch.ID]
