@@ -36,7 +36,10 @@ func (p *PGLedger) SaveBatch(ctx context.Context, batch domain.Batch, expected i
 	if batch.Snapshot != nil {
 		templateID, version = batch.Snapshot.TemplateID, batch.Snapshot.Version
 	}
-	_, execErr := p.pool.Exec(ctx, `update batches set status=$2, revision=$3, template_id=$4,
-template_version=$5, payload=$6 where id=$1`, batch.ID, batch.Status, batch.Revision, templateID, version, raw)
+	changed, execErr := p.pool.Exec(ctx, `update batches set status=$2, revision=$3, template_id=$4,
+template_version=$5, payload=$6 where id=$1 and revision=$7`, batch.ID, batch.Status, batch.Revision, templateID, version, raw, expected)
+	if execErr == nil && changed.RowsAffected() != 1 {
+		return ErrRevision
+	}
 	return execErr
 }

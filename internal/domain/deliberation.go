@@ -132,6 +132,7 @@ func (batch *Batch) RecordDecision(caseFile DeliberationCase, pass bool, conclus
 	if !replaced {
 		batch.Decisions = append(batch.Decisions, decision)
 	}
+	batch.Revision += 1
 	batch.UpdatedAt = at
 	return nil
 }
