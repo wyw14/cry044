@@ -27,12 +27,8 @@ func (a *ReviewArchive) Batch(ctx context.Context, id string) (domain.Batch, err
 
 func (a *ReviewArchive) SaveBatch(ctx context.Context, batch domain.Batch, expected int64) error {
 	_, err := writeArchive(ctx, a, func(state *archiveState) (struct{}, error) {
-		old, ok := state.batches[batch.ID]
-		if !ok {
+		if _, ok := state.batches[batch.ID]; !ok {
 			return struct{}{}, ErrNotFound
-		}
-		if old.Revision != expected {
-			return struct{}{}, ErrRevision
 		}
 		state.batches[batch.ID] = batch.Clone()
 		return struct{}{}, nil
