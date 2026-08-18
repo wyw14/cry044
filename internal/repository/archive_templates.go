@@ -7,15 +7,20 @@ import (
 
 func (a *ReviewArchive) SaveTemplate(ctx context.Context, value domain.StandardTemplate, expected int64, requestID string) (domain.StandardTemplate, error) {
 	return writeArchive(ctx, a, func(state *archiveState) (domain.StandardTemplate, error) {
-		if prior := state.requests[requestID]; prior != "" {
-			return state.templates[prior].Clone(), nil
+		if requestID != "" {
+			if prior := state.requests[requestID]; prior != "" {
+				return state.templates[prior].Clone(), nil
+			}
 		}
 		key := archiveKey(value.ID, value.Version)
 		current, exists := state.templates[key]
 		if (exists && current.Revision != expected) || (!exists && expected != 0) {
 			return value, ErrRevision
 		}
-		state.templates[key], state.requests[requestID] = value.Clone(), key
+		state.templates[key] = value.Clone()
+		if requestID != "" {
+			state.requests[requestID] = key
+		}
 		return value.Clone(), nil
 	})
 }

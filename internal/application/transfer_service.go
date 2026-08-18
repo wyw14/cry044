@@ -27,7 +27,7 @@ func (s *TransferService) ImportTemplate(ctx context.Context, payload []byte, id
 	when := s.clock.Now()
 	template.Status, template.Revision = domain.TemplateDraft, 1
 	template.CreatedAt, template.UpdatedAt = when, when
-	return s.repository.SaveTemplate(ctx, template, 0, "import")
+	return s.repository.SaveTemplate(ctx, template, 0, idempotencyKey)
 }
 
 func (s *TransferService) ExportTemplate(ctx context.Context, templateID string, version int) (string, error) {
