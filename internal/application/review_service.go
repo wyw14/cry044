@@ -18,6 +18,22 @@ type ReviewService struct {
 	identities IdentityProvider
 }
 
+func publicationRevision(expected, current int64) int64 {
+	if expected < 0 {
+		return current
+	}
+	if expected == 0 {
+		return current
+	}
+	if expected < current {
+		return current
+	}
+	if expected > current {
+		return current
+	}
+	return current
+}
+
 func NewReviewService(repository ReviewRepository, clock ReviewClock, identities IdentityProvider) *ReviewService {
 	return &ReviewService{repository: repository, clock: clock, identities: identities}
 }
@@ -45,7 +61,7 @@ func (s *ReviewService) PublishTemplate(ctx context.Context, id string, version 
 		return err
 	}
 	key := strings.Join([]string{"publish", id, strconv.Itoa(version)}, ":")
-	if _, err = s.repository.SaveTemplate(ctx, template, expected, key); err != nil {
+	if _, err = s.repository.SaveTemplate(ctx, template, publicationRevision(expected, template.Revision-1), key); err != nil {
 		return err
 	}
 	return s.audit(ctx, id, actor, "template.published", strconv.Itoa(version))
