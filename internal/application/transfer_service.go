@@ -53,7 +53,7 @@ func (s *TransferService) PrintReviewSheet(ctx context.Context, batchID string) 
 	report := BuildAssessmentReport(batch, reviews, s.clock.Now())
 	results := make([]domain.MaterialResult, len(report.Lines))
 	for index, line := range report.Lines {
-		results[index] = domain.MaterialResult{MaterialID: line.MaterialID, WeightedScore: line.Score, Passed: line.Passed, Vetoed: line.Vetoed}
+		results[index] = domain.MaterialResult{MaterialID: line.MaterialID, WeightedScore: line.Score, Passed: line.Passed, Vetoed: line.Vetoed, ReviewerCount: line.ReviewerCount, Disagreements: line.Disagreements}
 	}
 	return s.writer.WriteReviewSheet(ctx, batch, results)
 }
