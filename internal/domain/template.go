@@ -27,6 +27,13 @@ type Scale struct {
 	Pass   int
 }
 
+func (scale Scale) Validate(value int) error {
+	if value < scale.Min || value > scale.Max {
+		return ErrScoreOutOfRange
+	}
+	return nil
+}
+
 type Criterion struct {
 	Conditions  map[string]string
 	Variables   []string

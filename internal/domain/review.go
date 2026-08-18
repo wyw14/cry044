@@ -22,6 +22,7 @@ const (
 var ErrInvalidBatchFlow = errors.New("invalid review batch flow")
 var ErrSnapshotMissing = errors.New("review batch requires template snapshot")
 var ErrIncompleteReview = errors.New("required criteria are incomplete")
+var ErrScoreOutOfRange = errors.New("review score is outside criterion scale")
 
 type Material struct {
 	ID        string
@@ -221,6 +222,15 @@ func (board materialScoreboard) result(materialID string) (MaterialResult, error
 func Aggregate(snapshot TemplateSnapshot, materialID string, reviews []Review) (MaterialResult, error) {
 	board := newScoreboard(snapshot)
 	for _, review := range reviews {
+		for _, score := range review.Scores {
+			criterion, exists := board.criteria[score.CriterionID]
+			if !exists {
+				continue
+			}
+			if err := criterion.Scale.Validate(score.Value); err != nil {
+				return MaterialResult{}, err
+			}
+		}
 		board.include(review, materialID)
 	}
 	return board.result(materialID)
