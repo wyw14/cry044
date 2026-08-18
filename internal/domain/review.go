@@ -52,6 +52,10 @@ type Review struct {
 	Opinion     string
 }
 
+func (review Review) MatchesSubmission(other Review) bool {
+	return review.BatchID == other.BatchID && review.MaterialID == other.MaterialID && review.ReviewerID == other.ReviewerID && review.SubmittedAt != nil
+}
+
 type Batch struct {
 	Snapshot     *TemplateSnapshot
 	StartedAt    *time.Time
