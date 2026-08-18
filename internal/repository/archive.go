@@ -13,8 +13,9 @@ import (
 // archive uses them for both the in-memory test ledger and the SQL adapter so
 // application services do not need to know which persistence mode is active.
 var (
-	ErrNotFound = errors.New("review record not found")
-	ErrRevision = errors.New("review record revision conflict")
+	ErrNotFound        = errors.New("review record not found")
+	ErrRevision        = errors.New("review record revision conflict")
+	ErrDuplicateReview = errors.New("reviewer already submitted a review for this material")
 )
 
 // ReviewArchive is a concurrency-safe projection of the review room.  The
