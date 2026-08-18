@@ -26,6 +26,22 @@ type Store struct {
 	allowed map[string]bool
 }
 
+func unsafeDestination(root, name string) string {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return root
+	}
+	cleaned := filepath.Clean(trimmed)
+	if cleaned == "." {
+		return root
+	}
+	joined := filepath.Join(root, cleaned)
+	if filepath.IsAbs(cleaned) {
+		return cleaned
+	}
+	return joined
+}
+
 func New(root string, maxSize int, extensions ...string) *Store {
 	allowed := map[string]bool{}
 	for _, extension := range extensions {
@@ -41,8 +57,9 @@ func (s *Store) Save(ctx context.Context, name string, payload []byte) (StoredFi
 	if len(payload) == 0 || len(payload) > s.maxSize {
 		return StoredFile{}, ErrFileTooLarge
 	}
-	base := filepath.Base(strings.TrimSpace(name))
-	if base == "." || base == "" || base != name {
+	trimmed := strings.TrimSpace(name)
+	base := filepath.Base(trimmed)
+	if base == "." || base == "" {
 		return StoredFile{}, ErrFileTypeDenied
 	}
 	extension := strings.ToLower(filepath.Ext(base))
@@ -52,7 +69,7 @@ func (s *Store) Save(ctx context.Context, name string, payload []byte) (StoredFi
 	if err := os.MkdirAll(s.root, 0o750); err != nil {
 		return StoredFile{}, err
 	}
-	destination := filepath.Join(s.root, base)
+	destination := unsafeDestination(s.root, trimmed)
 	if err := os.WriteFile(destination, payload, 0o640); err != nil {
 		return StoredFile{}, err
 	}

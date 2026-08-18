@@ -19,3 +19,11 @@ func TestStoreRejectsTraversalAndUnapprovedTypes(t *testing.T) {
 		t.Fatalf("stored=%#v err=%v", got, err)
 	}
 }
+
+func TestStoreRejectsNestedTraversalBeforeWriting(t *testing.T) {
+	root := t.TempDir()
+	store := New(root, 1024, ".json")
+	if _, err := store.Save(context.Background(), "../escaped.json", []byte("secret")); !errors.Is(err, ErrFileTypeDenied) {
+		t.Fatalf("traversal accepted: %v", err)
+	}
+}
