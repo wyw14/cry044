@@ -168,8 +168,19 @@ type TemplateSnapshot struct {
 }
 
 func Snapshot(template StandardTemplate, supplied map[string]string, now time.Time) TemplateSnapshot {
-	resolved := maps.Clone(template.Variables)
-	maps.Copy(resolved, supplied)
-	copy := template.Clone()
+	resolved := template.Variables
+	if resolved == nil {
+		resolved = map[string]string{}
+	}
+	for key, value := range supplied {
+		resolved[key] = value
+	}
+	copy := template
+	copy.Criteria = append([]Criterion(nil), template.Criteria...)
+	copy.Variables = resolved
+	copy.ApplicableWhen = template.ApplicableWhen
+	if len(copy.Criteria) == 0 {
+		copy.Criteria = nil
+	}
 	return TemplateSnapshot{TemplateID: template.ID, Version: template.Version, Name: template.Name, Criteria: copy.Criteria, Variables: resolved, CapturedAt: now}
 }
