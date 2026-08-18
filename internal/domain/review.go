@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"fmt"
 	"maps"
 	"math"
 	"slices"
@@ -22,6 +23,7 @@ const (
 var ErrInvalidBatchFlow = errors.New("invalid review batch flow")
 var ErrSnapshotMissing = errors.New("review batch requires template snapshot")
 var ErrIncompleteReview = errors.New("required criteria are incomplete")
+var ErrScoreOutsideScale = errors.New("score value is outside criterion scale")
 
 type Material struct {
 	ID        string
@@ -168,15 +170,18 @@ func newScoreboard(snapshot TemplateSnapshot) materialScoreboard {
 	return materialScoreboard{criteria: criteria, tallies: make(map[string]criterionTally), reviewers: make(map[string]struct{})}
 }
 
-func (board *materialScoreboard) include(review Review, materialID string) {
+func (board *materialScoreboard) include(review Review, materialID string) error {
 	if review.MaterialID != materialID || review.SubmittedAt == nil {
-		return
+		return nil
 	}
 	board.reviewers[review.ReviewerID] = struct{}{}
 	for _, score := range review.Scores {
 		criterion, exists := board.criteria[score.CriterionID]
 		if !exists {
 			continue
+		}
+		if score.Value < criterion.Scale.Min || score.Value > criterion.Scale.Max {
+			return fmt.Errorf("%w: criterion %s score %d outside scale [%d, %d]", ErrScoreOutsideScale, score.CriterionID, score.Value, criterion.Scale.Min, criterion.Scale.Max)
 		}
 		tally := board.tallies[score.CriterionID]
 		if tally.count == 0 || score.Value < tally.minimum {
@@ -190,6 +195,7 @@ func (board *materialScoreboard) include(review Review, materialID string) {
 		tally.vetoed = tally.vetoed || (criterion.Veto && score.VetoTriggered)
 		board.tallies[score.CriterionID] = tally
 	}
+	return nil
 }
 
 func (board materialScoreboard) result(materialID string) (MaterialResult, error) {
@@ -221,7 +227,9 @@ func (board materialScoreboard) result(materialID string) (MaterialResult, error
 func Aggregate(snapshot TemplateSnapshot, materialID string, reviews []Review) (MaterialResult, error) {
 	board := newScoreboard(snapshot)
 	for _, review := range reviews {
-		board.include(review, materialID)
+		if err := board.include(review, materialID); err != nil {
+			return MaterialResult{}, err
+		}
 	}
 	return board.result(materialID)
 }
