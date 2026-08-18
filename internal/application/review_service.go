@@ -84,6 +84,15 @@ func (s *ReviewService) SubmitReview(ctx context.Context, batchID, materialID, r
 	if !assignedTo(batch, materialID, reviewer) {
 		return errors.New("reviewer is not assigned")
 	}
+	prior, err := s.repository.Reviews(ctx, batchID)
+	if err != nil {
+		return err
+	}
+	for _, review := range prior {
+		if review.MaterialID == materialID && review.ReviewerID == reviewer && review.SubmittedAt != nil {
+			return errors.New("review already submitted for material")
+		}
+	}
 	opinion = strings.TrimSpace(opinion)
 	submitted := s.clock.Now()
 	entry := domain.Review{ID: s.identities.NewID(), BatchID: batchID, MaterialID: materialID, ReviewerID: reviewer, Scores: scores, Opinion: opinion, SubmittedAt: &submitted}

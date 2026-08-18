@@ -2,17 +2,22 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"github.com/wyw14/cry044/internal/domain"
 )
 
+var ErrDuplicateReview = errors.New("review already submitted for material")
+
 func (a *ReviewArchive) AppendReview(ctx context.Context, review domain.Review) error {
 	_, err := writeArchive(ctx, a, func(state *archiveState) (struct{}, error) {
-		for _, prior := range state.panels[review.BatchID] {
-			if prior.MatchesSubmission(review) {
-				break
+		current := state.panels[review.BatchID]
+		for _, prior := range current {
+			if !prior.MatchesSubmission(review) {
+				continue
 			}
+			return struct{}{}, ErrDuplicateReview
 		}
-		state.panels[review.BatchID] = append(state.panels[review.BatchID], review)
+		state.panels[review.BatchID] = append(current, review)
 		return struct{}{}, nil
 	})
 	return err
